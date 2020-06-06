@@ -20,10 +20,143 @@ volatile bool isSRQ = false;  // has SRQ been asserted?
 /***** Read the status of the GPIB data bus wires and collect the byte of data *****/
 void readyGpibDbus() {
   // Set data pins to input
-	DDRB &=0b11110000;
-	DDRD &=0b00001111;
+  DDRD &= 0b11001111 ;
+  DDRC &= 0b11000000 ;
   //  PORTD = PORTD | 0b00110000; // PORTD bits 5,4 input_pullup
   //  PORTC = PORTC | 0b00111111; // PORTC bits 5,4,3,2,1,0 input_pullup
+  PORTD |= 0b00110000; // PORTD bits 5,4 input_pullup
+  PORTC |= 0b00111111; // PORTC bits 5,4,3,2,1,0 input_pullup
+}
+
+uint8_t readGpibDbus() {
+  // Read the byte of data on the bus
+  return ~((PIND << 2 & 0b11000000) + (PINC & 0b00111111));
+}
+
+
+/***** Set the status of the GPIB data bus wires with a byte of datacd ~/test *****/
+void setGpibDbus(uint8_t db) {
+  // Set data pins as outputs
+  DDRD |= 0b00110000;
+  DDRC |= 0b00111111;
+
+  // GPIB states are inverted
+  db = ~db;
+
+  // Set data bus
+  PORTC = (PORTC & ~0b00111111) | (db & 0b00111111);
+  PORTD = (PORTD & ~0b00110000) | ((db & 0b11000000) >> 2);
+}
+
+
+/***** Set the direction and state of the GPIB control lines ****/
+/*
+   Bits control lines as follows: 7-ATN, 6-SRQ, 5-REN, 4-EOI, 3-DAV, 2-NRFD, 1-NDAC, 0-IFC
+    bits (databits) : State - 0=LOW, 1=HIGH/INPUT_PULLUP; Direction - 0=input, 1=output;
+    mask (mask)     : 0=unaffected, 1=enabled
+    mode (mode)     : 0=set pin state, 1=set pin direction
+   Arduino Uno/Nano pin to Port/bit to direction/state byte map:
+   IFC   8   PORTB bit 0 byte bit 0
+   NDAC  9   PORTB bit 1 byte bit 1
+   NRFD  10  PORTB bit 2 byte bit 2
+   DAV   11  PORTB bit 3 byte bit 3
+   EOI   12  PORTB bit 4 byte bit 4
+   SRQ   2   PORTD bit 2 byte bit 6
+   REN   3   PORTD bit 3 byte bit 5
+   ATN   7   PORTD bit 8 byte bit 7
+*/
+void setGpibState(uint8_t bits, uint8_t mask, uint8_t mode) {
+
+  // PORTB - use only the first (right-most) 5 bits (pins 8-12)
+  uint8_t portBb = bits & 0x1F;
+  uint8_t portBm = mask & 0x1F;
+  // PORT D - keep bit 7, rotate bit 6 right 4 positions to set bit 2 on register
+  uint8_t portDb = (bits & 0x80) + ((bits & 0x40) >> 4) + ((bits & 0x20) >> 2);
+  uint8_t portDm = (mask & 0x80) + ((mask & 0x40) >> 4) + ((mask & 0x20) >> 2);
+
+  // Set registers: register = (register & ~bitmask) | (value & bitmask)
+  // Mask: 0=unaffected; 1=to be changed
+
+  switch (mode) {
+    case 0:
+      // Set pin states using mask
+      PORTB = ( (PORTB & ~portBm) | (portBb & portBm) );
+      PORTD = ( (PORTD & ~portDm) | (portDb & portDm) );
+      break;
+    case 1:
+      // Set pin direction registers using mask
+      DDRB = ( (DDRB & ~portBm) | (portBb & portBm) );
+      DDRD = ( (DDRD & ~portDm) | (portDb & portDm) );
+      break;
+  }
+}
+
+
+/***** Enable interrupts *****/
+#ifdef USE_INTERRUPTS
+
+volatile uint8_t atnPinMem = ATNPREG;
+volatile uint8_t srqPinMem = SRQPREG;
+static const uint8_t ATNint = 0b10000000;
+static const uint8_t SRQint = 0b00000100;
+
+
+void interruptsEn(){
+  cli();
+  PCICR |= 0b00000100;  // PORTD
+  PCMSK2 |= (SRQint^ATNint);
+  sei();
+}
+
+#pragma GCC diagnostic error "-Wmisspelled-isr"
+
+
+/***** Interrupt handler *****/
+ISR(PCINT2_vect) {
+
+  // Has PCINT23 fired (ATN asserted)?
+  if ((PIND ^ atnPinMem) & ATNint) {
+    isATN = (ATNPREG & ATNint) == 0;
+  }
+
+  // Has PCINT19 fired (SRQ asserted)?
+  if ((PIND ^ srqPinMem) & SRQint) {
+    isSRQ = (SRQPREG & SRQint) == 0;
+  }
+
+  // Save current state of PORTD register
+  atnPinMem = ATNPREG;
+  srqPinMem = SRQPREG;
+}
+
+
+/***** Catchall interrupt vector *****/
+/*
+  ISR(BADISR_vect) {
+  // ISR to catch ISR firing without handler
+  isBAD = true;
+  }
+*/
+#endif //USE_INTERRUPTS
+
+
+#endif //AR488UNO/AR488_NANO
+/***** ^^^^^^^^^^^^^^^^^^^^^ *****/
+/***** UNO/NANO BOARD LAYOUT *****/
+/*********************************/
+
+
+
+/*********************************/
+/***** UNO/NANO BOARD LAYOUT *****/
+/***** vvvvvvvvvvvvvvvvvvvvv *****/
+#if defined(AR488_UNO_2) || defined(AR488_NANO_2)
+
+/***** Read the status of the GPIB data bus wires and collect the byte of data *****/
+void readyGpibDbus() {
+  // Set data pins to input
+	DDRB &=0b11110000;
+	DDRD &=0b00001111;
 	PORTB|=0b00001111;
 	PORTD|=0b11110000;
 }
@@ -67,8 +200,8 @@ void setGpibDbus(uint8_t db) {
    ATN   3   PORTD bit 3 byte bit 7
 */
 void setGpibState(uint8_t bits, uint8_t mask, uint8_t mode) {
+  bits&=mask;//hasten (value & bitmask) compute
   // PORTC - use only the first (right-most) 6 bits (pins 14-16)
-  bits&=mask;
   uint8_t portCm = mask & 0b00111111;
   uint8_t portCb = bits & 0b00111111;
   // PORTD - use only bits 2-3 ()
@@ -98,6 +231,7 @@ void setGpibState(uint8_t bits, uint8_t mask, uint8_t mode) {
 
 void interruptsEn(){
   cli();
+  //USING INT0 INT1
   EICRA |= 0b1010;
   EIMSK |= 0b11;
   sei();
