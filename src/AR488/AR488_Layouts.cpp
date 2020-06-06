@@ -169,9 +169,6 @@ uint8_t readGpibDbus() {
 
 /***** Set the status of the GPIB data bus wires with a byte of datacd ~/test *****/
 void setGpibDbus(uint8_t db) {
-  // Set data pins as outputs
-	DDRB |=0b00001111;
-	DDRD |=0b11110000;
 
   // GPIB states are inverted
   db = ~db;
@@ -179,6 +176,9 @@ void setGpibDbus(uint8_t db) {
   // Set data bus
 	PORTB = (PORTB&0b11110000) | (db & 0b00001111);
 	PORTD = (PORTD&0b00001111) | (db & 0b11110000);
+  // Set data pins as outputs
+	DDRB |=0b00001111;
+	DDRD |=0b11110000;
 }
 
 
