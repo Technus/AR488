@@ -36,31 +36,29 @@
 
 
 /***** NOTE: UNO/NANO pinout last updated 21/09/2019 *****/
-#define DIO1  A0  /* GPIB 1  : PORTC bit 0 */
-#define DIO2  A1  /* GPIB 2  : PORTC bit 1 */
-#define DIO3  A2  /* GPIB 3  : PORTC bit 2 */
-#define DIO4  A3  /* GPIB 4  : PORTC bit 3 */
-#define DIO5  A4  /* GPIB 13 : PORTC bit 4 */
-#define DIO6  A5  /* GPIB 14 : PORTC bit 5 */
-#define DIO7   4  /* GPIB 15 : PORTD bit 4 */
-#define DIO8   5  /* GPIB 16 : PORTD bit 5 */
+#define DIO1   8  /* GPIB 1  : I/O data bit 1 */
+#define DIO2   9  /* GPIB 2  : I/O data bit 2 */
+#define DIO3  10  /* GPIB 3  : I/O data bit 3 */
+#define DIO4  11  /* GPIB 4  : I/O data bit 4 */
+#define DIO5   4  /* GPIB 13 : I/O data bit 5 */
+#define DIO6   5  /* GPIB 14 : I/O data bit 6 */
+#define DIO7   6  /* GPIB 15 : I/O data bit 7 */
+#define DIO8   7  /* GPIB 16 : I/O data bit 8 */
 
-#define IFC    8  /* GPIB 9  : PORTB bit 0 */
-#define NDAC   9  /* GPIB 8  : PORTB bit 1 */
-#define NRFD  10  /* GPIB 7  : PORTB bit 2 */
-#define DAV   11  /* GPIB 6  : PORTB bit 3 */
-#define EOI   12  /* GPIB 5  : PORTB bit 4 */
+#define IFC   14  /* GPIB 9  : PORTC bit 0 */
+#define NDAC  15  /* GPIB 8  : PORTC bit 1 */
+#define NRFD  16  /* GPIB 7  : PORTC bit 2 */
+#define DAV   17  /* GPIB 6  : PORTC bit 3 */
+#define EOI   18  /* GPIB 5  : PORTC bit 4 */
+#define REN   19  /* GPIB 17 : PORTC bit 5 */
 
 #define SRQ    2  /* GPIB 10 : PORTD bit 2 */
-#define REN    3  /* GPIB 17 : PORTD bit 3 */
-#define ATN    7  /* GPIB 11 : PORTD bit 7 */
+#define ATN    3  /* GPIB 11 : PORTD bit 3 */
 
 /***** PIN interrupts ******/
 
 // Interrupt registers
 #ifdef USE_INTERRUPTS
-  #define ATNPREG PIND
-  #define SRQPREG PIND
   void interruptsEn();
 #endif
 
