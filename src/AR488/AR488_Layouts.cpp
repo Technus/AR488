@@ -201,10 +201,10 @@ void setGpibDbus(uint8_t db) {
 */
 void setGpibState(uint8_t bits, uint8_t mask, uint8_t mode) {
   bits&=mask;//hasten (value & bitmask) compute
-  // PORTC - use only the first (right-most) 6 bits (pins 14-16)
+
   uint8_t portCm = mask & 0b00111111;
   uint8_t portCb = bits & 0b00111111;
-  // PORTD - use only bits 2-3 ()
+
   uint8_t portDm = (mask & 0b11000000)>>4;
   uint8_t portDb = (bits & 0b11000000)>>4;
 
@@ -263,7 +263,7 @@ ISR(INT1_vect) {
 #endif //USE_INTERRUPTS
 
 
-#endif //AR488UNO/AR488_NANO
+#endif //AR488UNO_2/AR488_NANO_2
 /***** ^^^^^^^^^^^^^^^^^^^^^ *****/
 /***** UNO/NANO BOARD LAYOUT *****/
 /*********************************/
@@ -1058,6 +1058,156 @@ void interruptsEn(){
 /************************************/
 
 
+/************************************/
+/***** LEONARDO R3 BOARD LAYOUT *****/
+/***** vvvvvvvvvvvvvvvvvvvvvvvv *****/
+#ifdef AR488_MEGA32U4_LR3_2
+
+/* DIO1   8  GPIB 1  : PORTB bit 4 */
+/* DIO2   9  GPIB 2  : PORTB bit 5 */
+/* DIO3  10  GPIB 3  : PORTB bit 6 */
+/* DIO4  11  GPIB 4  : PORTB bit 7 */
+/* DIO5   4  GPIB 13 : PORTD bit 4 */
+/* DIO6   5  GPIB 14 : PORTC bit 6 */
+/* DIO7   6  GPIB 15 : PORTD bit 7 */
+/* DIO8   7  GPIB 16 : PORTE bit 6 */
+/***** Ready the GPIB data bus wires to receive data *****/
+void readyGpibDbus() {
+  // Set data pins to input
+
+  DDRB &= 0b00001111;
+  DDRC &= 0b10111111;
+  DDRD &= 0b01101111;
+  DDRE &= 0b10111111;
+  
+  PORTB &= 0b11110000;
+  PORTC &= 0b01000000;
+  PORTD &= 0b10010000;
+  PORTE &= 0b01000000;
+}
+/***** Collect a byte of data from the GPIB bus *****/
+uint8_t readGpibDbus() {
+  return ~( ((PINB&0b11110000)>>4)|(( (PINC&0b01000000)|(PIND&0b10000000) )>>1) | ((PIND&0b00010000)) | ((PINE&0b01000000)<<1) );
+}
+
+
+/***** Set the status of the GPIB data bus wires with a byte of datacd ~/test *****/
+void setGpibDbus(uint8_t db) {
+//  uint8_t rdb;
+  uint8_t portf;
+  // Set data pins as outputs
+  DDRB |= 0b11110000;
+  DDRC |= 0b01000000;
+  DDRD |= 0b10010000;
+  DDRE |= 0b01000000;
+
+  // GPIB states are inverted
+  db = ~db;
+
+  // Set data bus
+  PORTB = (PORTB & ~0b11110000) | ((db & 0b00001111) << 4);
+  PORTC = (PORTC & ~0b01000000) | ((db & 0b00100000) << 1);
+  PORTD = (PORTD & ~0b10010000) | ((db & 0b01000000) << 1) | (db & 0b00010000);
+  PORTE = (PORTE & ~0b01000000) | ((db & 0b10000000) >> 1);
+}
+
+
+/***** Set the direction and state of the GPIB control lines ****/
+/*
+   Bits control lines as follows: 7-ATN, 6-SRQ, 5-REN, 4-EOI, 3-DAV, 2-NRFD, 1-NDAC, 0-IFC
+    bits (databits) : State - 0=LOW, 1=HIGH/INPUT_PULLUP; Direction - 0=input, 1=output;
+    mask (mask)     : 0=unaffected, 1=enabled
+    mode (mode)     : 0=set pin state, 1=set pin direction
+   Arduino Leonardo R3 pin to Port/bit to direction/state byte map:
+   IFC   A0  GPIB 9  : PORTF bit 7
+   NDAC  A1  GPIB 8  : PORTF bit 6
+   NRFD  A2  GPIB 7  : PORTF bit 5
+   DAV   A3  GPIB 6  : PORTF bit 4
+   EOI   A4  GPIB 5  : PORTF bit 1
+   REN   A5  GPIB 17 : PORTF bit 0
+
+   SRQ    2  GPIB 10 : PORTD bit 1
+   ATN    3  GPIB 11 : PORTD bit 0
+*/
+void setGpibState(uint8_t bits, uint8_t mask, uint8_t mode) {
+  bits=reverseBits(bits);
+  mask=reverseBits(mask);
+  bits&=mask;//hasten (value & bitmask) compute
+
+
+  // PORTB - use bits 0 to 3, rotate bits 4 positions left to set bits 4-7 on register (pins 8-12)
+  uint8_t portBb = ((bits & 0x0F) << 4);
+  uint8_t portBm = ((mask & 0x0F) << 4);
+  // PORTD - use bit 4, rotate left 2 positions to set bit 6 on register (EOI)
+  // PORTD - use bit 5, rotate right 5 positions to set bit 0 on register (REN)
+  // PORTD - use bit 6, rotate right 5 positions to set bit 1 on register (SRQ)
+  uint8_t portDb = ((bits & 0x10) << 2) + ((bits & 0x20) >> 5) + ((bits & 0x40) >> 5);
+  uint8_t portDm = ((mask & 0x10) << 2) + ((mask & 0x20) >> 5) + ((mask & 0x40) >> 5);
+  // PORTE - use bit 7, rotate left 1 position to set bit 6 on register (ATN)
+  uint8_t portEb = ((bits & 0x80) >> 1);
+  uint8_t portEm = ((mask & 0x80) >> 1);
+
+  // Set registers: register = (register & ~bitmask) | (value & bitmask)
+  // Mask: 0=unaffected; 1=to be changed
+
+  switch (mode) {
+    case 0:
+      // Set pin states using mask
+      PORTB = ( (PORTB & ~portBm) | (portBb & portBm) );
+      PORTD = ( (PORTD & ~portDm) | (portDb & portDm) );
+      PORTE = ( (PORTE & ~portEm) | (portEb & portEm) );
+      break;
+    case 1:
+      // Set pin direction registers using mask
+      DDRB = ( (DDRB & ~portBm) | (portBb & portBm) );
+      DDRD = ( (DDRD & ~portDm) | (portDb & portDm) );
+      DDRE = ( (DDRE & ~portEm) | (portEb & portEm) );
+      break;
+  }
+}
+
+
+uint8_t reverseBits(uint8_t dbyte) {
+   dbyte = (dbyte & 0xF0) >> 4 | (dbyte & 0x0F) << 4;
+   dbyte = (dbyte & 0xCC) >> 2 | (dbyte & 0x33) << 2;
+   dbyte = (dbyte & 0xAA) >> 1 | (dbyte & 0x55) << 1;
+   return dbyte;
+}
+
+
+/***** Enable interrupts *****/
+#ifdef USE_INTERRUPTS
+
+void interruptsEn(){
+  cli();
+  //USING INT0 INT1
+  EICRA |= 0b1010;
+  EIMSK |= 0b11;
+  sei();
+}
+
+#pragma GCC diagnostic error "-Wmisspelled-isr"
+
+
+/***** Interrupt handler *****/
+
+//SRQ INTERRUPT
+ISR(INT0_vect) {
+ isSRQ=true;
+}
+
+//ATN INTERRUPT
+ISR(INT1_vect) {
+  isATN=true;
+}
+
+#endif //USE_INTERRUPTS
+
+
+#endif //AR488_MEGA32U4_LR3_2
+/***** ^^^^^^^^^^^^^^^^^^^^^^^^ *****/
+/***** LEONARDO R3 BOARD LAYOUT *****/
+/************************************/
 
 
 /*************************************/

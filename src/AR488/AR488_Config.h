@@ -47,8 +47,10 @@
 /*** UNO and NANO boards ***/
 #elif __AVR_ATmega328P__
   /* Board/layout selection */
-  #define AR488_UNO
+  #define AR488_UNO_2
+  //#define AR488_UNO
   //#define AR488_NANO
+  //#define AR488_NANO_2
   /*** Serial ports ***/
   //Select HardwareSerial or SoftwareSerial (default = HardwareSerial) ***/
   // The UNO/NANO default hardware port is 'Serial'
@@ -65,8 +67,9 @@
 /*** MEGA 32U4 based boards (Micro, Leonardo) ***/
 #elif __AVR_ATmega32U4__
   /*** Board/layout selection ***/
-  #define AR488_MEGA32U4_MICRO  // Artag's design for Micro board
+  //#define AR488_MEGA32U4_MICRO  // Artag's design for Micro board
   //#define AR488_MEGA32U4_LR3  // Leonardo R3 (same pin layout as Uno)
+  #define AR488_MEGA32U4_LR3_2  // Leonardo R3 (same pin layout as Uno_2)
   /*** Serial ports ***/
   // By default the CDC serial port is used
   // Comment out #define AR_CDC_SERIAL if using RXI, TXO pins

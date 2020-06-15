@@ -384,6 +384,9 @@ uint8_t runMacro = 0;
 
 /******  Arduino standard SETUP procedure *****/
 void setup() {
+  digitalWrite(13, HIGH);
+  delay(1000);
+  
 
   // Disable the watchdog (needed to prevent WDT reset loop)
 #ifdef __AVR__

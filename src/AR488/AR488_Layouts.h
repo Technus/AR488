@@ -88,7 +88,7 @@
 #define DIO8   7  /* GPIB 16 : PORTD bit 7 */
 
 #define IFC   A0  /* GPIB 9  : PORTC bit 0 */
-#define NDAC  A1  /* GPIB 8  : PORTC bit 1 */
+#define NDAC  A1  /* GPIB  8  : PORTC bit 1 */
 #define NRFD  A2  /* GPIB 7  : PORTC bit 2 */
 #define DAV   A3  /* GPIB 6  : PORTC bit 3 */
 #define EOI   A4  /* GPIB 5  : PORTC bit 4 */
@@ -304,6 +304,48 @@ uint8_t reverseBits(uint8_t dbyte);
 
 
 #endif // AR488_MEGA32U4_LR3
+/***** ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ *****/
+/***** LEONARDO R3 LAYOUT DEFINITION *****/
+/*****************************************/
+
+/*****************************************/
+/***** LEONARDO R3 LAYOUT DEFINITION *****/
+/***** vvvvvvvvvvvvvvvvvvvvvvvvvvvvv *****/
+#ifdef AR488_MEGA32U4_LR3_2
+
+/***** NOTE: LEONARDO R3 pinout last updated 06/04/2020 *****/
+#define DIO1   8  /* GPIB 1  : PORTB bit 4 */
+#define DIO2   9  /* GPIB 2  : PORTB bit 5 */
+#define DIO3  10  /* GPIB 3  : PORTB bit 6 */
+#define DIO4  11  /* GPIB 4  : PORTB bit 7 */
+#define DIO5   4  /* GPIB 13 : PORTD bit 4 */
+#define DIO6   5  /* GPIB 14 : PORTC bit 6 */
+#define DIO7   6  /* GPIB 15 : PORTD bit 7 */
+#define DIO8   7  /* GPIB 16 : PORTE bit 6 */
+
+#define IFC   A0  /* GPIB 9  : PORTF bit 7 */
+#define NDAC  A1  /* GPIB 8  : PORTF bit 6 */
+#define NRFD  A2  /* GPIB 7  : PORTF bit 5 */
+#define DAV   A3  /* GPIB 6  : PORTF bit 4 */
+#define EOI   A4  /* GPIB 5  : PORTF bit 1 */
+#define REN   A5  /* GPIB 17 : PORTF bit 0 */
+
+#define SRQ    2  /* GPIB 10 : PORTD bit 1 */
+#define ATN    3  /* GPIB 11 : PORTD bit 0 */
+
+/***** PIN interrupts ******/
+
+// Interrupt registers
+
+// Interrupt registers
+#ifdef USE_INTERRUPTS
+  void interruptsEn();
+#endif
+
+uint8_t reverseBits(uint8_t dbyte);
+
+
+#endif // AR488_MEGA32U4_LR3_2
 /***** ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ *****/
 /***** LEONARDO R3 LAYOUT DEFINITION *****/
 /*****************************************/
